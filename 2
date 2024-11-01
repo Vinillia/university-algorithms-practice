@@ -1,0 +1,105 @@
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <unordered_map>
+#include <set>
+#include <string>
+
+using namespace std;
+
+struct State {
+    int x, y;
+    int keys;
+    string path;
+};
+
+int main() {
+    int n, m;
+    cin >> n >> m;
+    
+    vector<string> maze(n);
+    for (int i = 0; i < n; ++i) {
+        cin >> maze[i];
+    }
+
+    int k;
+    cin >> k;
+    unordered_map<char, char> doorKeyMap;
+    for (int i = 0; i < k; ++i) {
+        char door, key;
+        cin >> door >> key;
+        doorKeyMap[door] = key;
+    }
+
+    // Найти стартовую и конечную точки
+    int startX, startY, endX, endY;
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < m; ++j) {
+            if (maze[i][j] == 'S') {
+                startX = i;
+                startY = j;
+            } else if (maze[i][j] == 'F') {
+                endX = i;
+                endY = j;
+            }
+        }
+    }
+
+    // Направления движения и их обозначения
+    int dx[] = {-1, 1, 0, 0};
+    int dy[] = {0, 0, -1, 1};
+    char dir[] = {'U', 'D', 'L', 'R'};
+
+    // BFS
+    queue<State> q;
+    q.push({startX, startY, 0, ""});
+    vector<vector<vector<bool>>> visited(n, vector<vector<bool>>(m, vector<bool>(1 << k, false)));
+    visited[startX][startY][0] = true;
+
+    while (!q.empty()) {
+        State current = q.front();
+        q.pop();
+
+        // Если достигли выхода, выводим результат
+        if (current.x == endX && current.y == endY) {
+            cout << current.path.size() << endl; // Длина пути
+            cout << current.path << endl;       // Сам путь
+            return 0;
+        }
+
+        // Перемещение по четырем направлениям
+        for (int i = 0; i < 4; ++i) {
+            int nx = current.x + dx[i];
+            int ny = current.y + dy[i];
+            int keys = current.keys;
+
+            // Проверка границ
+            if (nx >= 0 && nx < n && ny >= 0 && ny < m && maze[nx][ny] != '#') {
+                char cell = maze[nx][ny];
+
+                // Если нашли ключ, добавляем его в набор ключей
+                if (cell >= 'a' && cell <= 'k') {
+                    keys |= (1 << (cell - 'a'));
+                }
+
+                // Проверка на дверь и наличие нужного ключа
+                if (cell >= 'A' && cell <= 'K') {
+                    char requiredKey = doorKeyMap[cell];
+                    if (!(keys & (1 << (requiredKey - 'a')))) {
+                        continue; // Нет нужного ключа, пропускаем эту клетку
+                    }
+                }
+
+                // Если клетка еще не посещена с данным набором ключей
+                if (!visited[nx][ny][keys]) {
+                    visited[nx][ny][keys] = true;
+                    q.push({nx, ny, keys, current.path + dir[i]});
+                }
+            }
+        }
+    }
+
+    // Если выхода нет
+    cout << -1 << endl;
+    return 0;
+}
