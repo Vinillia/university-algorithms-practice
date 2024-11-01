@@ -9,7 +9,7 @@ using namespace std;
 
 struct State {
     int x, y;
-    int keys;
+    set<char> keys;
     string path;
 };
 
@@ -52,9 +52,9 @@ int main() {
 
     // BFS
     queue<State> q;
-    q.push({startX, startY, 0, ""});
-    vector<vector<vector<bool>>> visited(n, vector<vector<bool>>(m, vector<bool>(1 << k, false)));
-    visited[startX][startY][0] = true;
+    q.push({startX, startY, {}, ""});
+    set<tuple<int, int, set<char>>> visited;
+    visited.insert({startX, startY, {}});
 
     while (!q.empty()) {
         State current = q.front();
@@ -71,28 +71,28 @@ int main() {
         for (int i = 0; i < 4; ++i) {
             int nx = current.x + dx[i];
             int ny = current.y + dy[i];
-            int keys = current.keys;
+            set<char> keys = current.keys;
 
-            // Проверка границ
+            // Проверка границ и проходимости
             if (nx >= 0 && nx < n && ny >= 0 && ny < m && maze[nx][ny] != '#') {
                 char cell = maze[nx][ny];
 
                 // Если нашли ключ, добавляем его в набор ключей
                 if (cell >= 'a' && cell <= 'k') {
-                    keys |= (1 << (cell - 'a'));
+                    keys.insert(cell);
                 }
 
                 // Проверка на дверь и наличие нужного ключа
                 if (cell >= 'A' && cell <= 'K') {
                     char requiredKey = doorKeyMap[cell];
-                    if (!(keys & (1 << (requiredKey - 'a')))) {
+                    if (keys.find(requiredKey) == keys.end()) {
                         continue; // Нет нужного ключа, пропускаем эту клетку
                     }
                 }
 
                 // Если клетка еще не посещена с данным набором ключей
-                if (!visited[nx][ny][keys]) {
-                    visited[nx][ny][keys] = true;
+                if (visited.find({nx, ny, keys}) == visited.end()) {
+                    visited.insert({nx, ny, keys});
                     q.push({nx, ny, keys, current.path + dir[i]});
                 }
             }
